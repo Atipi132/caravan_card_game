@@ -1,0 +1,32 @@
+{
+  "name": "caravan",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Fan recreation of the Fallout: New Vegas Caravan card game, playable online in the browser.",
+  "type": "module",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=@caravan/server & npm run dev --workspace=@caravan/client",
+    "dev:client": "npm run dev --workspace=@caravan/client",
+    "dev:server": "npm run dev --workspace=@caravan/server",
+    "build": "npm run build --workspace=@caravan/client && npm run build --workspace=@caravan/server",
+    "start": "node apps/server/dist/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc -p packages/engine && tsc -p apps/server && tsc -p apps/client",
+    "e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^22.10.0",
+    "fast-check": "^4.10.2",
+    "typescript": "^5.9.0",
+    "vitest": "^5.0.3"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
