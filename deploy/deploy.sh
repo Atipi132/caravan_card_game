@@ -1,31 +1,23 @@
 #!/usr/bin/env bash
-# Deploys a new version of Caravan on the VPS. Run from /opt/caravan (the workflow does it over SSH).
+# Deploys Caravan to Fly.io (single always-on Machine, European region).
 #
-#   DOMAIN=caravan-me.duckdns.org CARAVAN_IMAGE=ghcr.io/me/caravan:abc123 ./deploy.sh
+#   FLY_API_TOKEN=... ./deploy/deploy.sh
 #
-# Games live in memory, so restarting the container ends games in progress. To be nice to players,
-# the script waits (up to WAIT_IDLE_MAX seconds) for running games to finish before switching versions.
+# Games live in memory, so restarting the Machine ends games in progress. To be nice to players,
+# the script waits (up to WAIT_IDLE_MAX seconds) for running games to finish before deploying.
 set -euo pipefail
-cd "$(dirname "$0")"
+cd "$(dirname "$0")/.."
 
-: "${DOMAIN:?DOMAIN is required}"
-: "${CARAVAN_IMAGE:?CARAVAN_IMAGE is required}"
+APP="${FLY_APP:-$(sed -n "s/^app *= *['\"]\([^'\"]*\)['\"].*/\1/p" fly.toml | head -n1)}"
+: "${APP:?set FLY_APP or 'app =' in fly.toml}"
+URL="https://${APP}.fly.dev"
 WAIT_IDLE_MAX="${WAIT_IDLE_MAX:-600}"
 
-cat > .env <<EOF
-DOMAIN=${DOMAIN}
-CARAVAN_IMAGE=${CARAVAN_IMAGE}
-EOF
-
-echo "==> Pulling ${CARAVAN_IMAGE}"
-# SKIP_PULL=1 lets you try the stack locally with an image built on your machine.
-if [ "${SKIP_PULL:-0}" != "1" ]; then docker compose pull --quiet; fi
-
-# Wait for running games to end (only if the game container is already up).
-if docker compose ps --status running --services 2>/dev/null | grep -qx caravan; then
+# Wait for running games to end if the app is already live.
+if health=$(curl -fsS --max-time 5 "${URL}/healthz" 2>/dev/null); then
   waited=0
   while :; do
-    games=$(docker compose exec -T caravan wget -qO- http://127.0.0.1:3000/healthz 2>/dev/null | sed -n 's/.*"games":\([0-9]*\).*/\1/p' || true)
+    games=$(printf '%s' "$health" | sed -n 's/.*"games":\([0-9]*\).*/\1/p' || true)
     games=${games:-0}
     if [ "$games" -eq 0 ]; then break; fi
     if [ "$waited" -ge "$WAIT_IDLE_MAX" ]; then
@@ -35,21 +27,22 @@ if docker compose ps --status running --services 2>/dev/null | grep -qx caravan;
     echo "==> ${games} game(s) in progress, waiting... (${waited}s)"
     sleep 15
     waited=$((waited + 15))
+    health=$(curl -fsS --max-time 5 "${URL}/healthz" 2>/dev/null || echo '{"games":0}')
   done
 fi
 
-echo "==> Starting"
-docker compose up -d --remove-orphans
+echo "==> Deploying ${APP} to Fly.io (single Machine)"
+flyctl deploy --config fly.toml --app "${APP}" --remote-only --ha=false
 
-echo "==> Waiting for the health check"
-for i in $(seq 1 30); do
-  if docker compose exec -T caravan wget -qO- http://127.0.0.1:3000/healthz >/dev/null 2>&1; then
-    echo "==> Caravan is up: https://${DOMAIN}"
-    docker image prune -af --filter "until=168h" >/dev/null || true
+echo "==> Waiting for health check at ${URL}/healthz"
+for _ in $(seq 1 20); do
+  if curl -fsS --max-time 5 "${URL}/healthz"; then
+    echo
+    echo "==> Caravan is up: ${URL}"
     exit 0
   fi
-  sleep 2
+  sleep 3
 done
-echo "!! Caravan did not become healthy" >&2
-docker compose logs --tail 50 caravan >&2
+
+echo "!! Caravan did not become healthy at ${URL}/healthz" >&2
 exit 1

@@ -1,12 +1,8 @@
-# CI/CD: tests on every push & pull request; on pushes to `main`, build the Docker image,
-# publish it to GitHub Container Registry and deploy it to the VPS over SSH.
+# CI/CD: tests on every push & pull request; on pushes to `main`, build and deploy to Fly.io.
 #
 # Required repository settings (Settings → Secrets and variables → Actions):
-#   Secrets:   DEPLOY_HOST         VPS IP address or hostname
-#              DEPLOY_SSH_KEY      private key whose public half is in the VPS `deploy` user's authorized_keys
-#              DEPLOY_KNOWN_HOSTS  output of `ssh-keyscan -t ed25519 <VPS IP>`
-#   Variables: DOMAIN              public hostname, e.g. caravan-yourname.duckdns.org
-#              IMAGE_PLATFORMS     optional, default linux/amd64 (use linux/arm64 for ARM servers)
+#   Secret:   FLY_API_TOKEN  deploy token from `fly tokens create deploy -x 999999h`
+#   Variable: FLY_APP        optional, overrides the `app = '...'` name in fly.toml
 
 name: CI / Deploy
 
@@ -45,68 +41,20 @@ jobs:
           path: test-results/
           retention-days: 7
 
-  image:
+  deploy:
     needs: test
     if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write
-    outputs:
-      image: ${{ steps.meta.outputs.image }}
-    steps:
-      - uses: actions/checkout@v4
-      - id: meta
-        run: echo "image=ghcr.io/${GITHUB_REPOSITORY,,}" >> "$GITHUB_OUTPUT"
-      - uses: docker/setup-qemu-action@v3
-        if: contains(vars.IMAGE_PLATFORMS, 'arm64')
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - uses: docker/build-push-action@v6
-        with:
-          context: .
-          push: true
-          platforms: ${{ vars.IMAGE_PLATFORMS || 'linux/amd64' }}
-          tags: |
-            ${{ steps.meta.outputs.image }}:${{ github.sha }}
-            ${{ steps.meta.outputs.image }}:latest
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-  deploy:
-    needs: image
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: read
     environment:
       name: production
-      url: https://${{ vars.DOMAIN }}
+      url: https://${{ vars.FLY_APP || 'caravan-card-game' }}.fly.dev
     steps:
       - uses: actions/checkout@v4
-      - name: Configure SSH
-        run: |
-          install -m 700 -d ~/.ssh
-          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_deploy
-          chmod 600 ~/.ssh/id_deploy
-          echo "${{ secrets.DEPLOY_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
-          printf 'Host vps\n  HostName %s\n  User deploy\n  IdentityFile ~/.ssh/id_deploy\n  ServerAliveInterval 30\n' "${{ secrets.DEPLOY_HOST }}" > ~/.ssh/config
-      - name: Upload stack files
-        run: scp deploy/docker-compose.yml deploy/Caddyfile deploy/deploy.sh vps:/opt/caravan/
-      - name: Deploy
-        run: |
-          ssh vps "chmod +x /opt/caravan/deploy.sh && \
-            echo '${{ secrets.GITHUB_TOKEN }}' | docker login ghcr.io -u '${{ github.actor }}' --password-stdin >/dev/null && \
-            DOMAIN='${{ vars.DOMAIN }}' CARAVAN_IMAGE='${{ needs.image.outputs.image }}:${{ github.sha }}' /opt/caravan/deploy.sh; \
-            status=\$?; docker logout ghcr.io >/dev/null; exit \$status"
-      - name: Smoke test
-        run: |
-          for _ in $(seq 1 20); do
-            if curl -fsS "https://${{ vars.DOMAIN }}/healthz"; then exit 0; fi
-            sleep 5
-          done
-          echo "Site not reachable" >&2; exit 1
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+      - name: Deploy to Fly.io
+        run: ./deploy/deploy.sh
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+          FLY_APP: ${{ vars.FLY_APP }}

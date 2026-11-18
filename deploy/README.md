@@ -1,111 +1,92 @@
-# Deploying Caravan
+# Deploying Caravan to Fly.io
 
-**Hosting:** a small Linux VPS in Europe (recommended: **Hetzner Cloud**, about €5–6/month) runs two containers:
+**Hosting:** a single always-on **Fly Machine** (`shared-cpu-1x`, 256 MB RAM) in Europe (`cdg` – Paris), about **$2.19/month** (~€2/month). Fly's built-in proxy handles HTTPS (TLS certificates), HTTP→HTTPS redirects and WebSocket upgrades automatically.
 
-- the game (the Docker image built from this repo);
-- **Caddy**, which handles HTTPS automatically and passes WebSockets through.
+**Deployments:** every push to `main` runs the full test suite, builds the Docker image on Fly's remote builder, and deploys the Machine via [`deploy.sh`](deploy.sh) (`.github/workflows/deploy.yml`).
 
-**Deployments:** every push to `main` runs the tests, builds the image, publishes it to GitHub Container Registry and deploys it over SSH (`.github/workflows/deploy.yml`).
-
-**Domain:** the free hostname comes from **DuckDNS** (`yourname.duckdns.org`). You can switch to your own domain later by changing one variable.
+**Domain:** Fly.io gives your app a free HTTPS address (`https://<app-name>.fly.dev`) automatically. You can attach your own custom domain later with `fly certs add`.
 
 ```mermaid
 flowchart LR
-  dev["git push main"] --> gha["GitHub Actions: tests, build image, push to ghcr.io"]
-  gha -->|ssh deploy.sh| vps
-  subgraph vps["VPS (Ubuntu 24.04, ufw: 22/80/443)"]
-    caddy["Caddy :443 (Let's Encrypt)"] --> game["caravan :3000 (Node + Socket.IO)"]
+  dev["git push main"] --> gha["GitHub Actions: tests + flyctl deploy --remote-only"]
+  gha -->|"build & replace 1 Machine"| fly
+  subgraph fly["Fly.io (region: cdg, shared-cpu-1x 256MB)"]
+    proxy["Fly Proxy :443 (TLS + WebSockets)"] --> game["caravan Machine :3000 (Node + Socket.IO)"]
   end
-  players["Players' browsers"] -->|"https / wss"| caddy
+  players["Players' browsers"] -->|"https / wss"| proxy
 ```
 
 ## Why this setup
 
 | Need | How it is handled |
 |---|---|
-| Games live in memory and WebSockets stay open | A real always-on machine with a single instance. Nothing sleeps and there are no cold starts. Platforms that scale to zero on their free tiers would drop games in progress. |
-| Players mostly in Europe | Hetzner data centers in Germany or Finland, roughly 15–40 ms from France. |
-| Budget of a few euros a month | The smallest Hetzner server comfortably handles hundreds of simultaneous players: the game uses about 50 MB of RAM. |
-| No server babysitting | cloud-init configures the machine; security updates install automatically; containers restart by themselves; the TLS certificate renews itself. |
-| Deploys without killing games | `deploy.sh` waits up to 10 minutes for running games to finish before switching versions. If it has to restart anyway, players get a notice. |
-
-**Alternative:** OVHcloud VPS-1 (data centers in France, similar price). The steps are identical, because everything below works on any Ubuntu 24.04 VPS that accepts cloud-init "user data".
+| Games live in memory and WebSockets stay open | `--ha=false` + `auto_stop_machines = 'off'` + `min_machines_running = 1` in [`fly.toml`](../fly.toml) keeps exactly **one** Machine running 24/7. No scale-to-zero sleep, no cold starts, and WebSockets never hit the wrong instance. |
+| Players mostly in Europe | `primary_region = 'cdg'` (Paris) – low latency across Western Europe (other EU options: `ams`, `fra`, `lhr`). |
+| Minimal cost for an always-on server | `shared-cpu-1x` with 256 MB RAM runs around **$2.19/month** continuously. The Node server uses ~50 MB of RAM. |
+| Zero server babysitting | No Linux server to patch, no firewall, no Caddy or DuckDNS to configure. Fly Proxy terminates TLS and renews certificates automatically. |
+| Deploys without killing games | [`deploy.sh`](deploy.sh) checks `/healthz` and waits up to 10 minutes (`WAIT_IDLE_MAX`) for running games to finish before replacing the Machine. If it restarts during a game, `kill_signal = 'SIGINT'` gives the server time to warn players. |
 
 > [!NOTE]
-> VPS prices rose in 2026. Check the current price of the cheapest x86 plan with an IPv4 address (Hetzner CX23, or CPX/CX if out of stock). If you pick an **ARM** server (CAX), set the repository variable `IMAGE_PLATFORMS=linux/arm64`.
+> Fly.io does not have an ongoing free tier for new accounts (there is a short trial, then pay-as-you-go billing requiring a card). Running one `shared-cpu-1x` (256 MB) Machine 24/7 costs roughly $2.19/month plus minimal bandwidth ($0.02/GB after free allowance). Fly does not charge extra for open WebSocket connections.
 
 ---
 
-## One-time setup (about 20 minutes)
+## One-time setup (about 10 minutes)
 
-### 1. SSH keys
+### 1. Install `flyctl` and sign in
 
-Run these on your machine:
-
-```bash
-# Your personal key (skip if ~/.ssh/id_ed25519 already exists)
-ssh-keygen -t ed25519 -C "you@laptop"
-# A dedicated key for GitHub Actions to deploy with
-ssh-keygen -t ed25519 -f ~/.ssh/caravan_deploy -N "" -C "github-actions"
-```
-
-### 2. Create the server
-
-1. Sign up at <https://console.hetzner.cloud>, then create a project.
-2. **Add Server** with these choices:
-   - **Location:** Falkenstein or Nuremberg (Germany), or Helsinki.
-   - **Image:** Ubuntu 24.04.
-   - **Type:** Shared vCPU, x86, cheapest available (CX23).
-   - **Networking:** IPv4 + IPv6.
-   - **SSH keys:** add `~/.ssh/id_ed25519.pub`.
-   - **Cloud config:** paste [`deploy/cloud-init.yaml`](cloud-init.yaml) after replacing the two `ssh-ed25519 AAAA_REPLACE…` lines with the contents of `~/.ssh/id_ed25519.pub` and `~/.ssh/caravan_deploy.pub`.
-   - Backups are not needed: the server holds no data.
-3. Create the server and note its **IPv4 address**. Wait about 3 minutes for cloud-init to finish, then check:
+On your machine:
 
 ```bash
-ssh deploy@<IP> 'docker version --format "{{.Server.Version}}" && sudo ufw status && ls -ld /opt/caravan'
+curl -L https://fly.io/install.sh | sh
+fly auth signup   # or: fly auth login
 ```
 
-### 3. Free hostname (DuckDNS)
+### 2. Create the Fly app (without deploying yet)
 
-1. Sign in at <https://www.duckdns.org> (for example with GitHub).
-2. Create a subdomain such as `caravan-yourname`, set its **current ip** to the server's IPv4 address, and click **update ip**.
-3. Check that it resolves: `dig +short caravan-yourname.duckdns.org` should print the IP.
-
-### 4. GitHub repository
-
-Create an empty repository on GitHub (private or public), then push:
+App names on Fly.io are globally unique (they become `<app-name>.fly.dev`), so pick a unique name instead of `caravan-card-game` if it is already taken:
 
 ```bash
-git remote add origin git@github.com:<you>/<repo>.git
-git push -u origin main
+fly launch --no-deploy --copy-config --name caravan-yourname --region cdg --ha=false
 ```
 
-In **Settings → Secrets and variables → Actions**, add:
+- `--copy-config` keeps the settings from [`fly.toml`](../fly.toml) (and updates `app = '...'` to your chosen name).
+- `--ha=false` ensures Fly provisions **1** Machine instead of 2 (important both to avoid splitting in-memory games across two servers and to keep billing at ~$2.19/month).
+
+Commit the updated `app = '...'` line in `fly.toml` if `fly launch` changed it (or keep `fly.toml` as-is and set the `FLY_APP` GitHub variable below).
+
+### 3. Generate a deploy token
+
+Create an app-scoped deploy token for GitHub Actions:
+
+```bash
+fly tokens create deploy -x 999999h
+```
+
+Copy the entire token printed to the terminal (starts with `FlyV1 ...`).
+
+### 4. Configure GitHub Actions
+
+In your GitHub repository under **Settings → Secrets and variables → Actions**, add:
 
 | Kind | Name | Value |
 |---|---|---|
-| Secret | `DEPLOY_HOST` | the server IPv4 |
-| Secret | `DEPLOY_SSH_KEY` | contents of `~/.ssh/caravan_deploy` (the private key) |
-| Secret | `DEPLOY_KNOWN_HOSTS` | output of `ssh-keyscan -t ed25519 <IP>` |
-| Variable | `DOMAIN` | `caravan-yourname.duckdns.org` |
-| Variable (optional) | `IMAGE_PLATFORMS` | `linux/arm64` only for ARM servers |
+| Secret | `FLY_API_TOKEN` | the `FlyV1 ...` token from step 3 |
+| Variable (optional) | `FLY_APP` | your Fly app name (only needed if it differs from `app = '...'` in `fly.toml`) |
 
 ### 5. Deploy
 
-Push to `main`, or go to **Actions → CI / Deploy → Run workflow**. The workflow runs in about 5 minutes:
+Push to `main`, or go to **Actions → CI / Deploy → Run workflow**. The workflow runs in about 4–5 minutes:
 
-1. **test**: typecheck, unit and integration tests, then end-to-end tests in a real browser.
-2. **image**: builds and pushes `ghcr.io/<you>/<repo>:<commit-sha>` and `:latest`.
-3. **deploy**: copies `docker-compose.yml`, `Caddyfile` and `deploy.sh` to `/opt/caravan`, then runs `deploy.sh`, which pulls the image, waits for running games to finish and restarts the stack.
-4. **smoke test**: requests `https://$DOMAIN/healthz`.
+1. **test**: typecheck, unit and integration tests, then end-to-end tests in Chromium.
+2. **deploy**: runs `./deploy/deploy.sh`, which checks `/healthz` for active games, builds the Docker image remotely on Fly.io, replaces the single Machine (`--ha=false`), and verifies `/healthz` returns 200 OK.
 
-The first deploy also obtains the HTTPS certificate, which takes a few seconds. The game is then live at **https://caravan-yourname.duckdns.org**.
+Your game is live at **`https://<app-name>.fly.dev`**.
 
-You can also run the full browser test suite against the live site:
+You can also run the full browser test suite against the live deployment:
 
 ```bash
-E2E_BASE_URL=https://caravan-yourname.duckdns.org npm run e2e
+E2E_BASE_URL=https://caravan-yourname.fly.dev npm run e2e
 ```
 
 ---
@@ -114,18 +95,21 @@ E2E_BASE_URL=https://caravan-yourname.duckdns.org npm run e2e
 
 | Task | Command |
 |---|---|
-| Live logs | `ssh deploy@<IP> 'cd /opt/caravan && docker compose logs -f --tail 100'` |
-| Status / players online | `curl https://<DOMAIN>/healthz` |
-| Roll back | Re-run an older successful workflow run, or `ssh deploy@<IP> 'cd /opt/caravan && DOMAIN=<DOMAIN> CARAVAN_IMAGE=ghcr.io/<you>/<repo>:<old-sha> ./deploy.sh'` |
-| Deploy now without waiting for games | `WAIT_IDLE_MAX=0` in front of `./deploy.sh` |
-| OS updates | Security updates are automatic. Run `sudo apt upgrade && sudo reboot` now and then; the containers come back by themselves. |
-| Use your own domain later | Point an `A` record at the server IP, then change the `DOMAIN` variable and re-run the workflow. Caddy fetches the new certificate. |
+| Live logs | `fly logs` |
+| App & Machine status | `fly status` |
+| Players / games online | `curl https://<app-name>.fly.dev/healthz` |
+| Deploy manually from your laptop | `./deploy/deploy.sh` |
+| Deploy right now without waiting for games | `WAIT_IDLE_MAX=0 fly deploy --remote-only --ha=false` |
+| Roll back to a previous image | `fly releases --image` then `fly deploy --image registry.fly.io/<app-name>:<tag> --ha=false` |
+| Add your own domain later | `fly certs add caravan.example.com` (then add the CNAME/A records Fly prints) |
+| Check current costs / usage | `fly dashboard` |
 
-## Trying the production stack locally
+## Testing the container locally
+
+The same `Dockerfile` runs on Fly.io. To verify it locally before pushing:
 
 ```bash
 docker build -t caravan:test .
-mkdir -p /tmp/caravan-stack && cp deploy/{docker-compose.yml,Caddyfile,deploy.sh} /tmp/caravan-stack/ && cd /tmp/caravan-stack
-HTTP_PORT=8080 HTTPS_PORT=8443 SKIP_PULL=1 DOMAIN=http://localhost CARAVAN_IMAGE=caravan:test ./deploy.sh
-# → http://localhost:8080, and from the repo: E2E_BASE_URL=http://localhost:8080 npm run e2e
+docker run --rm -p 3000:3000 caravan:test
+# → http://localhost:3000, health check at http://localhost:3000/healthz
 ```

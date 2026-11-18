@@ -59,7 +59,7 @@ docker run -p 3000:3000 caravan
 
 Environment variables: `PORT` (default `3000`), `HOST` (default `0.0.0.0`), `STATIC_DIR` (location of the built client). `GET /healthz` returns server statistics. The server keeps games in memory, so run a single instance.
 
-**Hosting online:** see [`deploy/README.md`](deploy/README.md). It sets up a small European VPS (Hetzner) with Caddy for automatic HTTPS, a free DuckDNS hostname, and GitHub Actions that test, build and deploy on every push to `main`.
+**Hosting online:** see [`deploy/README.md`](deploy/README.md). It deploys the single container to **Fly.io** (`fly.toml`) as one always-on European Machine with automatic HTTPS, WebSockets, and GitHub Actions CI/CD on every push to `main`.
 
 ## Credits
 
