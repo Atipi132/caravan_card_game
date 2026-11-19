@@ -101,8 +101,33 @@ E2E_BASE_URL=https://caravan-yourname.fly.dev npm run e2e
 | Deploy manually from your laptop | `./deploy/deploy.sh` |
 | Deploy right now without waiting for games | `WAIT_IDLE_MAX=0 fly deploy --remote-only --ha=false` |
 | Roll back to a previous image | `fly releases --image` then `fly deploy --image registry.fly.io/<app-name>:<tag> --ha=false` |
-| Add your own domain later | `fly certs add caravan.example.com` (then add the CNAME/A records Fly prints) |
+| Add your own domain later | `fly certs add caravan.example.com`, set `SITE_URL = 'https://caravan.example.com'` and `CANONICAL_REDIRECT = 'true'` in `fly.toml`, and redeploy |
 | Check current costs / usage | `fly dashboard` |
+
+---
+
+## Search engine indexing (Google & Bing)
+
+The app serves `/robots.txt`, `/sitemap.xml`, Open Graph / Twitter cards (`/og-image.jpg`), JSON-LD structured data, Brotli/Gzip compression, and a static SEO guide at `/how-to-play`.
+
+To get indexed quickly after deploying:
+
+1. **Google Search Console** (<https://search.google.com/search-console>):
+   - Add a **URL prefix** property for `https://<app-name>.fly.dev` (or your custom domain).
+   - Pick the **HTML tag** verification method and copy only the `content="..."` value.
+   - Set it on Fly without changing any code:
+     ```bash
+     fly secrets set GOOGLE_SITE_VERIFICATION="<token>"
+     ```
+   - Click **Verify**, then go to **Sitemaps** and submit `sitemap.xml`.
+   - Use **URL Inspection → Request Indexing** for `/` and `/how-to-play`.
+
+2. **Bing Webmaster Tools** (<https://www.bing.com/webmasters>, which also feeds DuckDuckGo, Yahoo, and Ecosia):
+   - Sign in and click **Import from Google Search Console** (easiest), or verify with `fly secrets set BING_SITE_VERIFICATION="<token>"` and submit `sitemap.xml`.
+
+3. **Switching to a custom domain later**:
+   - Run `fly certs add <your-domain>` and create the DNS records Fly prints.
+   - Update `SITE_URL = 'https://<your-domain>'` and add `CANONICAL_REDIRECT = 'true'` under `[env]` in `fly.toml` so `.fly.dev` permanently 301-redirects to your domain without duplicate indexing.
 
 ## Testing the container locally
 

@@ -25,8 +25,12 @@ export type Route =
   | { name: 'settings' };
 
 function initialRoute(): Route {
-  const code = new URLSearchParams(window.location.search).get('room');
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get('room');
   if (code) return { name: 'online', joinCode: code.toUpperCase() };
+  const mode = params.get('mode');
+  if (mode === 'ai') return { name: 'ai-setup' };
+  if (mode === 'online') return { name: 'online' };
   return { name: 'menu' };
 }
 

@@ -18,6 +18,7 @@ kill_timeout = '10s'
   HOST = '0.0.0.0'
   NODE_ENV = 'production'
   PORT = '3000'
+  SITE_URL = 'https://caravan-card-game.fly.dev'
 
 [http_service]
   internal_port = 3000

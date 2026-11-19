@@ -3,12 +3,87 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Caravan – the Fallout: New Vegas card game, playable online against friends or the AI. Unofficial fan project." />
+    <title>Caravan Online — Play the Fallout: New Vegas Card Game</title>
+    <meta
+      name="description"
+      content="Play Caravan from Fallout: New Vegas online for free in your browser — multiplayer rooms, quick match, AI opponents, custom casino decks, and complete rules."
+    />
+    <meta name="theme-color" content="#1a1b17" />
+    <link rel="canonical" href="https://caravan-card-game.fly.dev/" />
+
+    <!-- Favicons & Web App Manifest -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <title>Caravan</title>
+    <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Caravan Online" />
+    <meta property="og:title" content="Caravan Online — Play the Fallout: New Vegas Card Game" />
+    <meta
+      property="og:description"
+      content="Play Caravan from Fallout: New Vegas in your browser. Challenge friends in private rooms, join quick match, or practice against AI with custom casino decks."
+    />
+    <meta property="og:url" content="https://caravan-card-game.fly.dev/" />
+    <meta property="og:image" content="https://caravan-card-game.fly.dev/og-image.jpg" />
+    <meta property="og:image:type" content="image/jpeg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Caravan Online card table with worn playing cards and retro casino card backs" />
+
+    <!-- Twitter / X Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Caravan Online — Play the Fallout: New Vegas Card Game" />
+    <meta
+      name="twitter:description"
+      content="Play Caravan from Fallout: New Vegas online against friends or AI. Free browser game with private rooms, quick match, custom decks, and full rules."
+    />
+    <meta name="twitter:image" content="https://caravan-card-game.fly.dev/og-image.jpg" />
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": ["VideoGame", "WebApplication"],
+        "name": "Caravan Online",
+        "alternateName": ["Fallout: New Vegas Caravan Online", "Caravan Card Game"],
+        "description": "A free browser recreation of Caravan, the two-player card game from Fallout: New Vegas, featuring online multiplayer, private invite rooms, AI opponents, custom decks, and complete rules.",
+        "url": "https://caravan-card-game.fly.dev/",
+        "image": "https://caravan-card-game.fly.dev/og-image.jpg",
+        "applicationCategory": "GameApplication",
+        "operatingSystem": "Any (Web Browser)",
+        "gamePlatform": "Web Browser",
+        "genre": ["Card Game", "Strategy"],
+        "playMode": ["SinglePlayer", "MultiPlayer"],
+        "numberOfPlayers": {
+          "@type": "QuantitativeValue",
+          "minValue": 1,
+          "maxValue": 2
+        },
+        "inLanguage": "en",
+        "isAccessibleForFree": true,
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        }
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>
+    <noscript>
+      <main style="max-width: 720px; margin: 48px auto; padding: 24px; color: #ffb642; font-family: monospace; line-height: 1.6">
+        <h1>Caravan Online — Fallout: New Vegas Card Game</h1>
+        <p>
+          Play Caravan, the two-player card game from Fallout: New Vegas, online in your browser against friends in private rooms,
+          through quick match, or against Easy, Normal, and Hard AI opponents.
+        </p>
+        <p>JavaScript is required to play the interactive card table. You can still read the full rules and FAQ:</p>
+        <p><a href="/how-to-play" style="color: #ffb642">How to Play Caravan — Complete Rules, Card Effects &amp; FAQ</a></p>
+      </main>
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

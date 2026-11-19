@@ -523,6 +523,15 @@ button {
   font-size: 18px;
   gap: 20px;
 }
+.footer-link {
+  color: var(--hud);
+  text-decoration: none;
+  border-bottom: 1px dotted var(--hud-dim);
+  white-space: nowrap;
+}
+.footer-link:hover {
+  border-bottom-style: solid;
+}
 
 .menu-layout {
   display: flex;

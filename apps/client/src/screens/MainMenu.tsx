@@ -18,10 +18,15 @@ export function MainMenu({ go }: { go: (r: Route) => void }) {
     <Screen
       footer={
         <>
-          <span>
-            Net Total: {stats.netTotal} caps · Win/Loss: {stats.wins}/{stats.losses}
+          <span style={{ whiteSpace: 'nowrap' }}>
+            Net Total: {stats.netTotal} caps · Win/Loss: {stats.wins}/{stats.losses} ·{' '}
+            <a href="/how-to-play" className="footer-link">
+              Rules &amp; FAQ
+            </a>
           </span>
-          <span className="dim">Unofficial fan project – not affiliated with Bethesda Softworks or Obsidian Entertainment.</span>
+          <span className="dim" style={{ fontSize: 16 }}>
+            Unofficial fan project – not affiliated with Bethesda or Obsidian.
+          </span>
         </>
       }
     >

@@ -1,0 +1,26 @@
+{
+  "name": "Caravan Online — Fallout: New Vegas Card Game",
+  "short_name": "Caravan",
+  "description": "Play Caravan from Fallout: New Vegas online against friends, random opponents, or AI.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0c0d0b",
+  "theme_color": "#1a1b17",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "/favicon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/favicon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
