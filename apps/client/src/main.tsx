@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import '@fontsource/share-tech-mono/400.css';
 import '@fontsource/special-elite/400.css';
 import './styles/global.css';
+import './styles/mobile.css';
 import { App } from './App';
 
 // Preload the card art so the first deal does not flicker.

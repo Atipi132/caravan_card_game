@@ -148,6 +148,10 @@ export function OnlineLobby({ back, joinCode }: { back: () => void; joinCode?: s
             maxLength={5}
             autoFocus
             autoComplete="off"
+            autoCapitalize="characters"
+            spellCheck={false}
+            inputMode="text"
+            enterKeyHint="go"
             onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z]/g, ''))}
           />
           <div className="pip-actions">
@@ -190,6 +194,7 @@ function Searching({ since, onCancel }: { since: number; onCancel: () => void })
 function Hosting({ code, settings, onCancel }: { code: string; settings: RoomSettings; onCancel: () => void }) {
   const link = `${window.location.origin}/?room=${code}`;
   const [copied, setCopied] = useState(false);
+  const canShare = typeof navigator !== 'undefined' && typeof navigator.share === 'function';
   const copy = async () => {
     try {
       await navigator.clipboard.writeText(link);
@@ -197,6 +202,13 @@ function Hosting({ code, settings, onCancel }: { code: string; settings: RoomSet
       setTimeout(() => setCopied(false), 2000);
     } catch {
       /* clipboard unavailable */
+    }
+  };
+  const share = async () => {
+    try {
+      await navigator.share({ title: 'Caravan Online — Private Room', text: `Join my Caravan game (room ${code})`, url: link });
+    } catch {
+      /* user cancelled share sheet */
     }
   };
   return (
@@ -211,6 +223,11 @@ function Hosting({ code, settings, onCancel }: { code: string; settings: RoomSet
       </div>
       <div className="blink">Waiting for your opponent…</div>
       <div className="pip-actions">
+        {canShare && (
+          <button className="pip-btn" onClick={share}>
+            Share invite link
+          </button>
+        )}
         <button className="pip-btn" onClick={copy}>
           {copied ? 'Copied!' : 'Copy invitation link'}
         </button>

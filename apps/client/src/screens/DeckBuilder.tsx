@@ -5,6 +5,7 @@ import { Screen } from '../ui/PipMenu';
 import { CardImage, SET_LABELS } from '../game/CardImage';
 import { deckStore, settingsStore, useStore } from '../settings';
 import { sfx } from '../audio/sfx';
+import { useViewport } from '../ui/viewport';
 
 const RANK_ORDER = Object.fromEntries(ALL_RANKS.map((r, i) => [r, i]));
 const SUIT_ORDER: Record<string, number> = { S: 0, H: 1, D: 2, C: 3 };
@@ -44,6 +45,8 @@ function randomDeck(): CardSpec[] {
 }
 
 export function DeckBuilder({ back }: { back: () => void }) {
+  const vp = useViewport();
+  const hideKey = vp.isMobile || vp.isTouch;
   const deck = useStore(deckStore);
   const settings = useStore(settingsStore);
   const [filter, setFilter] = useState<CardSet | 'all'>('all');
@@ -91,7 +94,7 @@ export function DeckBuilder({ back }: { back: () => void }) {
               Use this deck: {settings.useCustomDeck ? 'Yes' : 'No'}
             </button>
             <button className="prompt" onClick={back}>
-              Back <span className="prompt-key">Esc)</span>
+              Back {!hideKey && <span className="prompt-key">Esc)</span>}
             </button>
           </span>
         </>

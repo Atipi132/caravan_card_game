@@ -1,7 +1,11 @@
 import { useEffect } from 'react';
 import { Screen } from '../ui/PipMenu';
+import { useViewport } from '../ui/viewport';
 
 export function Rules({ back }: { back: () => void }) {
+  const vp = useViewport();
+  const isTouch = vp.isMobile || vp.isTouch;
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && back();
     window.addEventListener('keydown', onKey);
@@ -14,7 +18,7 @@ export function Rules({ back }: { back: () => void }) {
       footer={
         <span>
           <button className="prompt" onClick={back}>
-            Back <span className="prompt-key">Esc)</span>
+            Back {!isTouch && <span className="prompt-key">Esc)</span>}
           </button>
         </span>
       }
@@ -82,22 +86,35 @@ export function Rules({ back }: { back: () => void }) {
 
         <section>
           <h2>Controls</h2>
-          <dl className="controls">
-            <dt>Click a card</dt>
-            <dd>Select it in your hand, then click a highlighted caravan or card to play it.</dd>
-            <dt>W / 1–8</dt>
-            <dd>Select a card in your hand.</dd>
-            <dt>A / S / D</dt>
-            <dd>Play the selected number card (or Queen) on your 1st / 2nd / 3rd caravan.</dd>
-            <dt>Q</dt>
-            <dd>Discard the selected card.</dd>
-            <dt>E</dt>
-            <dd>Discard Track: choose one of your caravans to discard.</dd>
-            <dt>R / Esc / right click</dt>
-            <dd>Cancel.</dd>
-            <dt>B</dt>
-            <dd>Forfeit the game.</dd>
-          </dl>
+          {isTouch ? (
+            <dl className="controls">
+              <dt>Play a card</dt>
+              <dd>Tap a card in your hand to select it, then tap a highlighted caravan to play it.</dd>
+              <dt>Face cards (J, K, Joker)</dt>
+              <dd>Tap any highlighted caravan. If it has multiple targets, a picker pops up so you can tap the exact card.</dd>
+              <dt>Discard / Disband</dt>
+              <dd>Use the action bar at the bottom of the screen to discard a selected card or disband one of your caravans.</dd>
+              <dt>Cancel</dt>
+              <dd>Tap Cancel or empty table space.</dd>
+            </dl>
+          ) : (
+            <dl className="controls">
+              <dt>Click a card</dt>
+              <dd>Select it in your hand, then click a highlighted caravan or card to play it.</dd>
+              <dt>W / 1–8</dt>
+              <dd>Select a card in your hand.</dd>
+              <dt>A / S / D</dt>
+              <dd>Play the selected number card (or Queen) on your 1st / 2nd / 3rd caravan.</dd>
+              <dt>Q</dt>
+              <dd>Discard the selected card.</dd>
+              <dt>E</dt>
+              <dd>Discard Track: choose one of your caravans to discard.</dd>
+              <dt>R / Esc / right click</dt>
+              <dd>Cancel.</dd>
+              <dt>B</dt>
+              <dd>Forfeit the game.</dd>
+            </dl>
+          )}
         </section>
       </div>
     </Screen>

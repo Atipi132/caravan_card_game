@@ -8,7 +8,7 @@ export default defineConfig({
     },
   },
   test: {
-    include: ['packages/**/test/**/*.test.ts', 'apps/server/test/**/*.test.ts'],
+    include: ['packages/**/test/**/*.test.ts', 'apps/server/test/**/*.test.ts', 'apps/client/src/**/*.test.ts'],
     testTimeout: 30000,
   },
 });

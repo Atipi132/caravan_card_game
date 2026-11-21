@@ -49,8 +49,8 @@ export function PipMenu({ items, autoFocus = true }: { items: MenuItem[]; autoFo
           key={it.label}
           data-testid={it.testId}
           className={`pip-menu-item ${i === index ? 'is-active' : ''} ${it.disabled ? 'is-disabled' : ''}`}
-          onMouseEnter={() => {
-            if (!it.disabled && i !== index) {
+          onPointerEnter={(e) => {
+            if (e.pointerType === 'mouse' && !it.disabled && i !== index) {
               setIndex(i);
               sfx.blip();
             }

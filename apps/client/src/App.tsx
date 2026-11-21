@@ -83,8 +83,10 @@ export function App() {
     };
   }, []);
 
+  const isGameRoute = route.name === 'ai-game' || route.name === 'online-game';
+
   return (
-    <Stage className={`hud-${settings.hud}`}>
+    <Stage className={`hud-${settings.hud}`} scalableInLandscape={isGameRoute}>
       {route.name === 'menu' && <MainMenu go={go} />}
       {route.name === 'ai-setup' && <AiSetup go={go} back={toMenu} />}
       {route.name === 'ai-game' && <LocalGameScreen key={route.key} level={route.level} ante={route.ante} onLeave={toMenu} />}

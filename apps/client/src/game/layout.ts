@@ -173,3 +173,169 @@ export function spawnPoint(view: PlayerView, owner: PlayerIndex) {
 export function exitPoint(view: PlayerView, owner: PlayerIndex, x: number) {
   return owner === view.you ? { x: x + 60, y: STAGE_H + 120 } : { x: x + 60, y: -CARD_H - 120 };
 }
+
+/* ==========================================================================
+   Mobile portrait layout — dynamic coordinates for a vertical 3-column arena.
+   Desktop constants & functions above are untouched.
+   ========================================================================== */
+
+export interface PortraitMetrics {
+  arenaW: number;
+  arenaH: number;
+  cardW: number;
+  cardH: number;
+  colW: number;
+  colLeft: [number, number, number];
+  cardLeft: [number, number, number];
+  stripY: number;
+  stripH: number;
+  oppRowY: number;
+  playerRowY: number;
+  padY: number;
+  attachDx: number;
+  attachDy: number;
+  maxStep: number;
+  oppZone: { top: number; height: number };
+  meZone: { top: number; height: number };
+}
+
+function clamp(v: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, v));
+}
+
+/** Computes responsive geometry for the 3-column vertical caravan arena on portrait mobile. */
+export function computePortraitMetrics(arenaW: number, arenaH: number): PortraitMetrics {
+  const w = Math.max(280, Math.round(arenaW));
+  const h = Math.max(300, Math.round(arenaH));
+  const padX = Math.round(clamp(w * 0.025, 8, 24));
+  const gapX = Math.round(clamp(w * 0.02, 6, 20));
+  const colW = (w - padX * 2 - gapX * 2) / 3;
+
+  const stripH = h < 440 ? 38 : 46;
+  const padY = 6;
+  const stripGap = 6;
+  const halfH = Math.max(80, (h - stripH) / 2 - padY - stripGap);
+
+  const aspect = CARD_H / CARD_W;
+  const maxCardWByCol = colW * 0.7;
+  const maxCardWByHeight = (halfH * 0.76) / aspect;
+  const cardW = Math.round(clamp(Math.min(maxCardWByCol, maxCardWByHeight), 54, CARD_W));
+  const cardH = Math.round(cardW * aspect);
+
+  // Leave room inside each column for up to 3 attached face cards without horizontal clipping.
+  const maxAttachDx = Math.max(6, Math.floor((colW - cardW) / 3));
+  const attachDx = Math.min(maxAttachDx, Math.max(7, Math.round(cardW * 0.14)));
+  const attachDy = Math.max(3, Math.min(8, Math.round(cardH * 0.045)));
+
+  const stackW = cardW + 3 * attachDx;
+  const colLeft: [number, number, number] = [
+    Math.round(padX),
+    Math.round(padX + colW + gapX),
+    Math.round(padX + 2 * (colW + gapX)),
+  ];
+  const insetX = Math.max(0, Math.floor((colW - stackW) / 2));
+  const cardLeft: [number, number, number] = [colLeft[0] + insetX, colLeft[1] + insetX, colLeft[2] + insetX];
+
+  const stripY = Math.round((h - stripH) / 2);
+  const oppRowY = Math.max(padY, stripY - stripGap - cardH);
+  const playerRowY = stripY + stripH + stripGap;
+  const maxStep = Math.max(16, Math.min(34, Math.round(cardH * 0.27)));
+
+  return {
+    arenaW: w,
+    arenaH: h,
+    cardW,
+    cardH,
+    colW: Math.round(colW),
+    colLeft,
+    cardLeft,
+    stripY,
+    stripH,
+    oppRowY,
+    playerRowY,
+    padY,
+    attachDx,
+    attachDy,
+    maxStep,
+    oppZone: { top: 0, height: stripY },
+    meZone: { top: stripY + stripH, height: Math.max(0, h - (stripY + stripH)) },
+  };
+}
+
+function portraitStep(n: number, available: number, maxStep: number): number {
+  if (n <= 1) return maxStep;
+  return Math.max(8, Math.min(maxStep, Math.max(0, available) / (n - 1)));
+}
+
+/** Position of the n-th number card of a caravan inside the portrait arena. */
+export function portraitCaravanCardPos(m: PortraitMetrics, isMe: boolean, lane: number, index: number, count: number): { x: number; y: number } {
+  const x = m.cardLeft[lane];
+  if (isMe) {
+    const available = m.arenaH - m.padY - m.cardH - 3 * m.attachDy - m.playerRowY;
+    const step = portraitStep(count, available, m.maxStep);
+    return { x, y: Math.round(m.playerRowY + index * step) };
+  }
+  const available = m.oppRowY - m.padY;
+  const step = portraitStep(count, available, m.maxStep);
+  return { x, y: Math.round(m.oppRowY - index * step) };
+}
+
+/** Computes table caravan + attachment sprites for the portrait arena (hands live in the bottom dock / top bar). */
+export function computePortraitCaravanSprites(view: PlayerView, m: PortraitMetrics): Sprite[] {
+  const sprites: Sprite[] = [];
+  const me = view.you;
+
+  for (const side of [0, 1] as PlayerIndex[]) {
+    const isMe = side === me;
+    view.caravans[side].forEach((caravan, lane) => {
+      const n = caravan.cards.length;
+      caravan.cards.forEach((placed, index) => {
+        const pos = portraitCaravanCardPos(m, isMe, lane, index, n);
+        const z = 20 + index * 5;
+        sprites.push({
+          id: placed.card.id,
+          kind: 'caravan',
+          owner: placed.card.owner,
+          set: placed.card.set,
+          card: placed.card,
+          x: pos.x + jitter(placed.card.id, 1),
+          y: pos.y,
+          rotate: jitter(placed.card.id + 'r', 1.1),
+          z,
+          faceUp: true,
+          side,
+          lane: lane as CaravanIndex,
+          index,
+        });
+        placed.attachments.forEach((a, ai) => {
+          sprites.push({
+            id: a.id,
+            kind: 'attachment',
+            owner: a.owner,
+            set: a.set,
+            card: a,
+            x: pos.x + m.attachDx * (ai + 1),
+            // Keep opponent attachments slightly upward so base-card attachments don't overlap the carved center strip.
+            y: pos.y + (isMe ? 1 : -1) * m.attachDy * (ai + 1),
+            rotate: jitter(a.id + 'r', 1.6),
+            z: z + 1 + ai,
+            faceUp: true,
+            side,
+            lane: lane as CaravanIndex,
+            index,
+          });
+        });
+      });
+    });
+  }
+
+  return sprites;
+}
+
+export function portraitSpawnPoint(view: PlayerView, owner: PlayerIndex, m: PortraitMetrics) {
+  return owner === view.you ? { x: m.arenaW - m.cardW - 12, y: m.arenaH + 20 } : { x: m.arenaW - m.cardW - 12, y: -m.cardH - 20 };
+}
+
+export function portraitExitPoint(view: PlayerView, owner: PlayerIndex, x: number, m: PortraitMetrics) {
+  return owner === view.you ? { x, y: m.arenaH + 60 } : { x, y: -m.cardH - 60 };
+}

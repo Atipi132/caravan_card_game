@@ -4,8 +4,11 @@ import { Screen } from '../ui/PipMenu';
 import { CardImage, SET_LABELS } from '../game/CardImage';
 import { settingsStore, statsStore, useStore } from '../settings';
 import { sfx } from '../audio/sfx';
+import { useViewport } from '../ui/viewport';
 
 export function SettingsScreen({ back }: { back: () => void }) {
+  const vp = useViewport();
+  const hideKey = vp.isMobile || vp.isTouch;
   const s = useStore(settingsStore);
   const [name, setName] = useState(s.name);
   const [confirmReset, setConfirmReset] = useState(false);
@@ -29,7 +32,7 @@ export function SettingsScreen({ back }: { back: () => void }) {
       footer={
         <span>
           <button className="prompt" onClick={back}>
-            Back <span className="prompt-key">Esc)</span>
+            Back {!hideKey && <span className="prompt-key">Esc)</span>}
           </button>
         </span>
       }

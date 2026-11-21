@@ -1,0 +1,742 @@
+/* ==========================================================================
+   Mobile & Touch styles — strictly scoped to `.is-mobile`, `.is-portrait`,
+   `.is-landscape`, `.is-touch`, and new `.m-*` / `.picker-*` elements so
+   the desktop 1600×900 layout remains 100% unchanged.
+   ========================================================================== */
+
+html,
+body,
+#root {
+  height: 100%;
+  height: 100dvh;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button,
+.sprite,
+.lane-zone,
+.m-hand-card {
+  touch-action: manipulation;
+}
+
+/* ---------- Mobile full-viewport stage ---------- */
+.viewport-mobile {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  background: #0c0d0b;
+}
+.viewport-mobile::before {
+  display: none;
+}
+
+.stage-mobile {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  height: 100dvh;
+  overflow: hidden;
+  background: #141612;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
+/* ---------- Responsive menu screens (portrait + landscape mobile) ---------- */
+.stage-mobile .screen {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.stage-mobile .screen-content {
+  position: relative;
+  inset: auto;
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: 18px 18px 14px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  z-index: 2;
+}
+
+.stage-mobile .screen-title {
+  font-size: clamp(24px, 6.8vw, 34px);
+  margin: 0 0 18px;
+  padding-bottom: 8px;
+}
+
+.stage-mobile .screen-footer {
+  position: relative;
+  inset: auto;
+  flex: 0 0 auto;
+  padding: 10px 18px 12px;
+  background: rgba(8, 10, 6, 0.85);
+  border-top: 1px solid var(--hud-dim);
+  font-size: 14px;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  z-index: 3;
+}
+
+.stage-mobile .screen-footer > span {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  align-items: center;
+}
+
+/* Main menu */
+.stage-mobile .menu-layout {
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  height: auto;
+  gap: 10px;
+}
+
+.stage-mobile .menu-left {
+  width: 100%;
+}
+
+.stage-mobile .game-title {
+  font-size: clamp(50px, 14vw, 84px);
+  line-height: 1;
+}
+
+.stage-mobile .game-subtitle {
+  font-size: clamp(13px, 3.6vw, 17px);
+  margin: 6px 0 20px;
+}
+
+.stage-mobile .menu-fan {
+  flex: none;
+  height: 205px;
+  width: 100%;
+  margin-top: 14px;
+  overflow: visible;
+  transform: scale(0.5);
+  transform-origin: 50% 0%;
+}
+
+.stage-mobile .menu-fan-card {
+  top: 42%;
+}
+
+.stage-mobile.is-landscape .menu-fan {
+  display: none;
+}
+
+.stage-mobile .pip-menu {
+  min-width: 0;
+  width: 100%;
+  gap: 8px;
+}
+
+.stage-mobile .pip-menu-item {
+  min-width: 0;
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 16px;
+  font-size: clamp(20px, 5.2vw, 25px);
+  border-color: var(--hud-dim);
+  background: rgba(8, 10, 6, 0.55);
+}
+
+.stage-mobile .pip-menu-item.is-active {
+  border-color: var(--hud);
+  background: var(--hud-bg);
+}
+
+.stage-mobile .pip-menu-hint {
+  margin-top: 10px;
+  min-height: 2.2em;
+  max-width: 100%;
+  font-size: 15px;
+}
+
+/* Online lobby */
+.stage-mobile .lobby-box,
+.stage-mobile .join-form {
+  width: 100%;
+  font-size: 18px;
+  gap: 10px;
+}
+
+.stage-mobile .room-code {
+  font-size: clamp(38px, 12vw, 64px);
+  letter-spacing: 0.22em;
+  padding: 6px 16px;
+  max-width: 100%;
+}
+
+.stage-mobile .room-link {
+  font-size: 14px;
+  word-break: break-all;
+}
+
+.stage-mobile .pip-input {
+  width: 100%;
+  max-width: 100%;
+  font-size: 20px;
+  min-height: 46px;
+}
+
+.stage-mobile .code-input {
+  font-size: clamp(32px, 10vw, 48px);
+  width: min(100%, 280px);
+  letter-spacing: 0.24em;
+}
+
+.stage-mobile .lobby-error {
+  margin-top: 14px;
+  font-size: 16px;
+}
+
+/* Settings */
+.stage-mobile .settings-grid {
+  grid-template-columns: 1fr;
+  gap: 8px;
+  font-size: 18px;
+}
+
+.stage-mobile .settings-grid > label {
+  margin-top: 10px;
+  font-size: 15px;
+  opacity: 0.85;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.stage-mobile .settings-grid > label:first-child {
+  margin-top: 0;
+}
+
+.stage-mobile .seg {
+  flex-wrap: wrap;
+}
+
+.stage-mobile .seg-btn {
+  min-height: 44px;
+  flex: 1 1 0;
+  font-size: 18px;
+}
+
+.stage-mobile .pip-range {
+  width: 100%;
+  height: 36px;
+}
+
+.stage-mobile .back-picker {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.stage-mobile .back-option .card-img {
+  width: 100%;
+  max-width: 82px;
+  height: auto;
+  aspect-ratio: 5 / 7;
+}
+
+.stage-mobile .back-option {
+  font-size: 13px;
+}
+
+/* Rules */
+.stage-mobile .rules {
+  grid-template-columns: 1fr;
+  gap: 0;
+  font-size: 16px;
+  padding-right: 4px;
+}
+
+.stage-mobile .rules h2 {
+  font-size: 20px;
+}
+
+/* Deck builder */
+.stage-mobile .deckbuilder {
+  margin-top: 0;
+  gap: 8px;
+}
+
+.stage-mobile .db-header {
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  font-size: 17px;
+}
+
+.stage-mobile .db-filters {
+  margin-left: 0;
+  width: 100%;
+  overflow-x: auto;
+  padding-bottom: 4px;
+  touch-action: pan-x;
+  -webkit-overflow-scrolling: touch;
+}
+
+.stage-mobile .db-filter {
+  flex: 0 0 auto;
+  font-size: 15px;
+  padding: 6px 10px;
+  min-height: 36px;
+  border-color: var(--hud-dim);
+}
+
+.stage-mobile .db-row {
+  height: 154px;
+  padding: 10px 6px 14px;
+  touch-action: pan-x;
+  -webkit-overflow-scrolling: touch;
+}
+
+.stage-mobile .db-card {
+  width: 88px;
+  height: 123px;
+  margin-right: -32px;
+}
+
+.stage-mobile .db-card:hover {
+  transform: none;
+}
+
+.stage-mobile .db-help {
+  font-size: 14px;
+  margin: 4px 0 0;
+}
+
+.stage-mobile .prompt {
+  font-size: 16px;
+  padding: 8px 12px;
+  min-height: 40px;
+  border: 1px solid var(--hud-dim);
+  background: rgba(0, 0, 0, 0.35);
+}
+
+/* Modals on native mobile screens */
+.stage-mobile .pip-box {
+  min-width: 0;
+  width: min(92vw, 440px);
+  max-height: 86dvh;
+  overflow-y: auto;
+  padding: 20px 18px;
+  font-size: 17px;
+}
+
+.stage-mobile .pip-title {
+  font-size: 22px;
+}
+
+.stage-mobile .pip-title.big {
+  font-size: 34px;
+}
+
+.stage-mobile .pip-btn {
+  min-height: 44px;
+  padding: 8px 16px;
+  font-size: 17px;
+}
+
+.stage-mobile .final-bids {
+  gap: 14px;
+  font-size: 14px;
+  flex-wrap: wrap;
+}
+
+/* ==========================================================================
+   Mobile Portrait Board (`.m-*`)
+   ========================================================================== */
+
+.m-board {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #141612;
+}
+
+.m-topbar {
+  position: relative;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 10px;
+  background: rgba(10, 12, 8, 0.9);
+  border-bottom: 1px solid var(--hud-dim);
+  z-index: 500;
+}
+
+.m-top-left {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.m-opp-name {
+  font-size: 15px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.m-turn {
+  font-size: 13px;
+}
+
+.m-top-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.m-chip {
+  font-size: 13px;
+  padding: 4px 7px;
+  border: 1px solid var(--hud-dim);
+  background: rgba(0, 0, 0, 0.35);
+  white-space: nowrap;
+}
+
+.m-chip-btn {
+  font-size: 13px;
+  min-height: 32px;
+  padding: 4px 9px;
+  border: 1px solid var(--hud);
+  background: rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.m-chip-btn.is-active {
+  background: var(--hud-bg);
+}
+
+.m-stats-pop {
+  position: absolute;
+  top: 48px;
+  right: 10px;
+  z-index: 1500;
+  width: 220px;
+  padding: 10px 14px;
+  border: 2px solid var(--hud);
+  background: rgba(8, 10, 6, 0.95);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.75);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.m-arena {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.m-arena .table-bg,
+.m-arena .table-shade {
+  inset: 0;
+}
+
+.m-lane-zone.is-target {
+  background: rgba(255, 182, 66, 0.05);
+  box-shadow: inset 0 0 0 1px var(--hud-dim);
+}
+
+.hud-green .m-lane-zone.is-target {
+  background: rgba(26, 255, 128, 0.05);
+}
+
+.m-lane-label {
+  position: absolute;
+  z-index: 250;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 2px 4px;
+  background: rgba(10, 12, 8, 0.52);
+  border-top: 1px solid rgba(0, 0, 0, 0.45);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.45);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.m-lane-label .bid-row {
+  height: auto;
+  gap: 5px;
+  align-items: baseline;
+  line-height: 1.15;
+}
+
+.m-lane-label .bid {
+  width: 24px;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.m-lane-label .carved {
+  font-size: clamp(10px, 2.9vw, 14px);
+  letter-spacing: 0.03em;
+  color: rgba(235, 232, 212, 0.78);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.9);
+  mix-blend-mode: normal;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.m-status {
+  flex: 0 0 auto;
+  padding: 5px 10px;
+  min-height: 26px;
+  font-size: 13px;
+  line-height: 1.3;
+  text-align: center;
+  background: rgba(10, 12, 8, 0.85);
+  border-top: 1px solid var(--hud-dim);
+  z-index: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.m-status.is-error {
+  color: #ff7a5a;
+  text-shadow: 0 0 6px rgba(255, 90, 60, 0.6);
+}
+
+.m-dock {
+  flex: 0 0 auto;
+  background: rgba(10, 12, 8, 0.94);
+  border-top: 1px solid var(--hud-dim);
+  padding: 12px 8px 6px;
+  z-index: 600;
+}
+
+.m-hand {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  overflow: visible;
+}
+
+.m-hand-inner {
+  position: relative;
+}
+
+.m-hand-card {
+  position: absolute;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  transition:
+    top 0.16s ease,
+    transform 0.16s ease;
+}
+
+.m-hand-card.is-selected .sprite-tint {
+  opacity: 1;
+  background: var(--hud);
+  mix-blend-mode: multiply;
+  box-shadow:
+    0 0 0 2px var(--hud),
+    0 0 16px var(--hud-glow);
+}
+
+.m-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.m-deck-pill {
+  flex: 0 0 auto;
+  font-size: 13px;
+  padding: 0 6px;
+  opacity: 0.85;
+  white-space: nowrap;
+}
+
+.m-act-btn {
+  flex: 1 1 0;
+  min-height: 44px;
+  padding: 6px 6px;
+  border: 1.5px solid var(--hud);
+  background: rgba(0, 0, 0, 0.45);
+  font-size: 15px;
+  cursor: pointer;
+  text-shadow: 0 0 6px var(--hud-glow);
+  white-space: nowrap;
+}
+
+.m-act-btn.is-disabled {
+  opacity: 0.35;
+  border-color: var(--hud-dim);
+  cursor: default;
+}
+
+.m-act-btn.is-active {
+  background: var(--hud-bg);
+  box-shadow: 0 0 10px var(--hud-glow);
+}
+
+/* ==========================================================================
+   Mobile Landscape Board (scaled 16:9 table with enlarged touch controls)
+   ========================================================================== */
+
+.stage.is-landscape .hud-prompts {
+  right: 44px;
+  bottom: 24px;
+  gap: 10px;
+}
+
+.stage.is-landscape .prompt {
+  font-size: 32px;
+  padding: 10px 18px;
+  border: 2px solid var(--hud-dim);
+  background: rgba(8, 10, 6, 0.78);
+}
+
+.stage.is-landscape .hud-stats {
+  right: 44px;
+  top: 20px;
+  font-size: 26px;
+}
+
+.stage.is-landscape .hud-info {
+  left: 26px;
+  bottom: 22px;
+  width: 280px;
+  font-size: 21px;
+}
+
+/* ==========================================================================
+   Enlarged Face-Card Target Picker Sheet (mobile portrait & landscape)
+   ========================================================================== */
+
+.picker-backdrop {
+  padding: 14px;
+}
+
+.picker-sheet {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.picker-title {
+  margin-bottom: 4px;
+}
+
+.picker-sub {
+  font-size: 15px;
+}
+
+.picker-cards {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  justify-content: safe center;
+  padding: 8px 4px;
+  touch-action: pan-x;
+  -webkit-overflow-scrolling: touch;
+}
+
+.picker-card-btn {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  padding: 6px;
+  background: rgba(0, 0, 0, 0.45);
+  border: 2px solid var(--hud);
+  border-radius: 8px;
+  cursor: pointer;
+  box-shadow: 0 0 12px var(--hud-glow);
+}
+
+.picker-card-btn.is-full {
+  opacity: 0.45;
+  border-color: var(--hud-dim);
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.picker-card-art {
+  width: 76px;
+  height: 106px;
+}
+
+.picker-card-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-size: 14px;
+  line-height: 1.2;
+}
+
+.picker-card-val {
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.picker-card-att {
+  font-size: 12px;
+  opacity: 0.85;
+}
+
+.picker-card-full {
+  font-size: 12px;
+}
+
+.picker-actions {
+  margin-top: 4px;
+}
+
+/* Inside the scaled 1600×900 landscape stage, size the picker up so touch targets stay large */
+.stage.is-landscape .picker-sheet {
+  max-width: 1120px;
+  padding: 32px 40px;
+}
+
+.stage.is-landscape .picker-sub {
+  font-size: 24px;
+}
+
+.stage.is-landscape .picker-card-art {
+  width: 152px;
+  height: 213px;
+}
+
+.stage.is-landscape .picker-card-meta {
+  font-size: 22px;
+}
+
+.stage.is-landscape .picker-card-val {
+  font-size: 26px;
+}
+
+.stage.is-landscape .picker-card-att {
+  font-size: 19px;
+}
+
+.stage.is-landscape .pip-btn {
+  font-size: 28px;
+  padding: 12px 28px;
+}

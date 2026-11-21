@@ -20,13 +20,15 @@ interface Props {
   initialPos: { x: number; y: number; rotate: number } | false;
   exitPos: { x: number; y: number };
   visual: SpriteVisualState;
+  width?: number;
+  height?: number;
   onClick?: (id: string) => void;
   onHover?: (id: string | null) => void;
 }
 
 const MOVE = { type: 'tween' as const, ease: [0.22, 0.8, 0.25, 1] as [number, number, number, number], duration: 0.5 };
 
-function CardSpriteImpl({ sprite, initialPos, exitPos, visual, onClick, onHover }: Props) {
+function CardSpriteImpl({ sprite, initialPos, exitPos, visual, width = CARD_W, height = CARD_H, onClick, onHover }: Props) {
   // While a card travels, keep it above everything else, then drop to its resting z-index.
   const [flying, setFlying] = useState(initialPos !== false);
   const last = useRef({ x: sprite.x, y: sprite.y });
@@ -54,7 +56,7 @@ function CardSpriteImpl({ sprite, initialPos, exitPos, visual, onClick, onHover 
       data-card-id={sprite.id}
       data-card={sprite.card ? (sprite.card.rank === 'JOKER' ? 'JOKER' : `${sprite.card.rank}${sprite.card.suit}`) : 'hidden'}
       data-kind={sprite.kind}
-      style={{ width: CARD_W, height: CARD_H, zIndex: flying ? 900 + sprite.z : sprite.z }}
+      style={{ width, height, zIndex: flying ? 900 + sprite.z : sprite.z }}
       initial={initialPos === false ? false : { ...initialPos, opacity: 1 }}
       animate={{ x: sprite.x, y: sprite.y, rotate: sprite.rotate, opacity: 1 }}
       exit={{ x: exitPos.x, y: exitPos.y, rotate: sprite.rotate + 25, opacity: 1, transition: { duration: 0.6, ease: 'easeIn' } }}
@@ -64,8 +66,8 @@ function CardSpriteImpl({ sprite, initialPos, exitPos, visual, onClick, onHover 
         e.stopPropagation();
         onClick(sprite.id);
       } : undefined}
-      onPointerEnter={onHover ? () => onHover(sprite.id) : undefined}
-      onPointerLeave={onHover ? () => onHover(null) : undefined}
+      onPointerEnter={onHover ? (e) => e.pointerType === 'mouse' && onHover(sprite.id) : undefined}
+      onPointerLeave={onHover ? (e) => e.pointerType === 'mouse' && onHover(null) : undefined}
     >
       <CardImage spec={sprite.card} set={sprite.set} faceUp={sprite.faceUp} seed={sprite.id} />
       <div className="sprite-tint" />
@@ -84,6 +86,8 @@ export const CardSprite = memo(CardSpriteImpl, (a, b) => {
     s1.faceUp === s2.faceUp &&
     s1.card === s2.card &&
     s1.kind === s2.kind &&
+    a.width === b.width &&
+    a.height === b.height &&
     a.exitPos.x === b.exitPos.x &&
     a.exitPos.y === b.exitPos.y &&
     a.visual.selected === b.visual.selected &&
